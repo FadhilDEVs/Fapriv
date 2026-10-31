@@ -92,13 +92,38 @@ export interface TagItem {
   name: string
 }
 
+export type BannerTheme =
+  | 'crimson_silk'
+  | 'cyber_velvet'
+  | 'obsidian_gold'
+  | 'tokyo_midnight'
+  | 'custom'
+
+export interface UserSocials {
+  github?: string
+  linkedin?: string
+  telegram?: string
+  website?: string
+}
+
 export interface UserProfile {
   name: string
+  nickname?: string
   email: string
   role?: string
-  avatarUrl?: string
+  bio?: string
   quote?: string
+  avatarUrl?: string
+  avatarType?: 'preset' | 'upload' | 'url'
+  bannerTheme?: BannerTheme
+  customBannerUrl?: string
+  badge?: string
+  location?: string
+  socials?: UserSocials
+  securityPin?: string
 }
+
+export type CloudSyncStatus = 'synced' | 'syncing' | 'offline' | 'error' | 'pending_setup'
 
 export interface ToastMessage {
   id: string

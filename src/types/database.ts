@@ -15,7 +15,48 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      // Future business tables will be defined here
+      fapriv_workspace: {
+        Row: {
+          id: string
+          profile: Json
+          shortcuts: Json
+          notes: Json
+          important_data: Json
+          categories: Json
+          tags: Json
+          activities: Json
+          deleted_items: Json
+          security_pin: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id: string
+          profile?: Json
+          shortcuts?: Json
+          notes?: Json
+          important_data?: Json
+          categories?: Json
+          tags?: Json
+          activities?: Json
+          deleted_items?: Json
+          security_pin?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          profile?: Json
+          shortcuts?: Json
+          notes?: Json
+          important_data?: Json
+          categories?: Json
+          tags?: Json
+          activities?: Json
+          deleted_items?: Json
+          security_pin?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       [key: string]: {
         Row: Record<string, unknown>
         Insert: Record<string, unknown>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import type {
   NavView,
   ThemeMode,
@@ -11,7 +11,13 @@ import type {
   TagItem,
   UserProfile,
   ToastMessage,
+  CloudSyncStatus,
 } from '../types/fapriv.ts'
+import {
+  fetchRemoteWorkspace,
+  pushRemoteWorkspace,
+  subscribeToWorkspaceChanges,
+} from '../services/cloudWorkspace.ts'
 import {
   initialProfile,
   initialCategories,
@@ -111,6 +117,20 @@ interface WorkspaceContextType {
     importantData: number
     favorites: number
   }
+
+  // Master Lock
+  isLocked: boolean
+  lockWorkspace: () => void
+  unlockWorkspace: () => void
+
+  // Profile Modal
+  isProfileModalOpen: boolean
+  setIsProfileModalOpen: (open: boolean) => void
+
+  // Cloud Sync (Universal Access)
+  cloudSyncStatus: CloudSyncStatus
+  lastSyncedAt: string | null
+  syncWithCloud: (forcePush?: boolean) => Promise<void>
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null)
@@ -154,6 +174,24 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [quickAddType, setQuickAddType] = useState<'shortcut' | 'note' | 'important_data' | null>(null)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+
+  // Master Lock state
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    try {
+      const isRemembered = localStorage.getItem('fapriv_device_authorized')
+      return isRemembered !== 'true'
+    } catch {
+      return true
+    }
+  })
+
+  // Cloud Sync state
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('syncing')
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
+  const isCloudInitializedRef = useRef(false)
+  const isRemoteUpdatingRef = useRef(false)
+  const saveTimeoutRef = useRef<any>(null)
 
   const [editingShortcut, setEditingShortcut] = useState<ShortcutItem | null>(null)
   const [editingNote, setEditingNote] = useState<NoteItem | null>(null)
@@ -258,17 +296,229 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags))
   }, [tags])
 
-  // Global Keyboard Shortcut (Ctrl+K or Cmd+K)
+  // Lock actions
+  const unlockWorkspace = useCallback(() => {
+    setIsLocked(false)
+  }, [])
+
+  const lockWorkspace = useCallback(() => {
+    setIsLocked(true)
+    try {
+      localStorage.removeItem('fapriv_device_authorized')
+    } catch {}
+    addToast({
+      type: 'info',
+      title: 'Workspace Terkunci',
+      description: 'Masukkan PIN Keamanan untuk membuka kembali.',
+    })
+  }, [addToast])
+
+  // Global Keyboard Shortcuts (Ctrl+K = Search, Alt+L = Lock)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setIsSearchOpen((prev) => !prev)
+      } else if (e.altKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault()
+        lockWorkspace()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lockWorkspace])
+
+  // Cloud Sync Handler
+  const syncWithCloud = useCallback(
+    async (forcePush = false) => {
+      setCloudSyncStatus('syncing')
+      if (forcePush) {
+        const res = await pushRemoteWorkspace({
+          profile,
+          shortcuts,
+          notes,
+          importantData,
+          categories,
+          tags,
+          activities,
+          deletedItems,
+          securityPin: profile.securityPin || '123456',
+        })
+        if (res.success) {
+          setCloudSyncStatus('synced')
+          const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          setLastSyncedAt(timeStr)
+          addToast({
+            type: 'success',
+            title: 'Tersinkronisasi ke Cloud!',
+            description: 'Data terbaru berhasil diunggah ke Supabase.',
+          })
+        } else if (res.isTableMissing) {
+          setCloudSyncStatus('pending_setup')
+          addToast({
+            type: 'warning',
+            title: 'Tabel Supabase Belum Ada',
+            description: 'Jalankan skrip SQL di Dashboard Supabase untuk mengaktifkan sinkronisasi universal.',
+          })
+        } else {
+          setCloudSyncStatus('error')
+          addToast({
+            type: 'error',
+            title: 'Gagal Sinkronisasi Cloud',
+            description: res.error || 'Periksa koneksi Supabase Anda.',
+          })
+        }
+      } else {
+        const res = await fetchRemoteWorkspace()
+        if (res.success && res.data) {
+          isRemoteUpdatingRef.current = true
+          setProfileState((prev) => ({ ...prev, ...res.data!.profile }))
+          setShortcuts(res.data.shortcuts)
+          setNotes(res.data.notes)
+          setImportantData(res.data.importantData)
+          if (res.data.categories?.length) setCategories(res.data.categories)
+          if (res.data.tags?.length) setTags(res.data.tags)
+          if (res.data.activities?.length) setActivities(res.data.activities)
+          if (res.data.deletedItems) setDeletedItems(res.data.deletedItems)
+          setCloudSyncStatus('synced')
+          const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          setLastSyncedAt(timeStr)
+          setTimeout(() => {
+            isRemoteUpdatingRef.current = false
+          }, 400)
+          addToast({ type: 'success', title: 'Data Cloud Berhasil Diunduh' })
+        } else if (res.isTableMissing) {
+          setCloudSyncStatus('pending_setup')
+        } else {
+          setCloudSyncStatus('offline')
+        }
+      }
+    },
+    [profile, shortcuts, notes, importantData, categories, tags, activities, deletedItems, addToast]
+  )
+
+  // Initial Cloud Load and Realtime Subscription
+  useEffect(() => {
+    let isMounted = true
+
+    const loadCloudData = async () => {
+      setCloudSyncStatus('syncing')
+      const res = await fetchRemoteWorkspace()
+      if (!isMounted) return
+
+      if (res.isTableMissing) {
+        setCloudSyncStatus('pending_setup')
+        isCloudInitializedRef.current = true
+        return
+      }
+
+      if (res.success) {
+        if (res.data) {
+          isRemoteUpdatingRef.current = true
+          setProfileState((prev) => ({ ...prev, ...res.data!.profile }))
+          setShortcuts(res.data.shortcuts)
+          setNotes(res.data.notes)
+          setImportantData(res.data.importantData)
+          if (res.data.categories?.length) setCategories(res.data.categories)
+          if (res.data.tags?.length) setTags(res.data.tags)
+          if (res.data.activities?.length) setActivities(res.data.activities)
+          if (res.data.deletedItems) setDeletedItems(res.data.deletedItems)
+          setCloudSyncStatus('synced')
+          setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+          setTimeout(() => {
+            isRemoteUpdatingRef.current = false
+          }, 400)
+        } else {
+          // Initialize remote database with current state
+          const pushRes = await pushRemoteWorkspace({
+            profile,
+            shortcuts,
+            notes,
+            importantData,
+            categories,
+            tags,
+            activities,
+            deletedItems,
+            securityPin: profile.securityPin || '123456',
+          })
+          if (pushRes.success) {
+            setCloudSyncStatus('synced')
+            setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+          } else if (pushRes.isTableMissing) {
+            setCloudSyncStatus('pending_setup')
+          }
+        }
+      } else {
+        setCloudSyncStatus('offline')
+      }
+
+      isCloudInitializedRef.current = true
+    }
+
+    loadCloudData()
+
+    // Realtime cross-device updates listener
+    const unsubscribe = subscribeToWorkspaceChanges((incoming) => {
+      if (!isMounted) return
+      isRemoteUpdatingRef.current = true
+      setProfileState((prev) => ({ ...prev, ...incoming.profile }))
+      setShortcuts(incoming.shortcuts)
+      setNotes(incoming.notes)
+      setImportantData(incoming.importantData)
+      if (incoming.categories?.length) setCategories(incoming.categories)
+      if (incoming.tags?.length) setTags(incoming.tags)
+      if (incoming.activities?.length) setActivities(incoming.activities)
+      if (incoming.deletedItems) setDeletedItems(incoming.deletedItems)
+      setCloudSyncStatus('synced')
+      setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+      setTimeout(() => {
+        isRemoteUpdatingRef.current = false
+      }, 400)
+    })
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
   }, [])
+
+  // Debounced auto-save to Supabase Cloud on any local state mutation
+  useEffect(() => {
+    if (!isCloudInitializedRef.current || isRemoteUpdatingRef.current) return
+    if (cloudSyncStatus === 'pending_setup') return
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      setCloudSyncStatus('syncing')
+      const res = await pushRemoteWorkspace({
+        profile,
+        shortcuts,
+        notes,
+        importantData,
+        categories,
+        tags,
+        activities,
+        deletedItems,
+        securityPin: profile.securityPin || '123456',
+      })
+
+      if (res.success) {
+        setCloudSyncStatus('synced')
+        setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+      } else if (res.isTableMissing) {
+        setCloudSyncStatus('pending_setup')
+      } else {
+        setCloudSyncStatus('error')
+      }
+    }, 700)
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
+  }, [profile, shortcuts, notes, importantData, categories, tags, activities, deletedItems, cloudSyncStatus])
 
   // Modals helper
   const openQuickAdd = (type?: 'shortcut' | 'note' | 'important_data') => {
@@ -280,7 +530,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateProfile = (p: Partial<UserProfile>) => {
     setProfileState((prev) => ({ ...prev, ...p }))
-    addToast({ type: 'success', title: 'Profil berhasil diperbarui' })
   }
 
   // --- SHORTCUTS ---
@@ -735,6 +984,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         exportBackup,
         importBackup,
         stats,
+        // Master Lock
+        isLocked,
+        lockWorkspace,
+        unlockWorkspace,
+        // Profile Modal
+        isProfileModalOpen,
+        setIsProfileModalOpen,
+        // Cloud Sync
+        cloudSyncStatus,
+        lastSyncedAt,
+        syncWithCloud,
       }}
     >
       {children}

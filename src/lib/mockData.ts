@@ -9,11 +9,24 @@ import type {
 } from '../types/fapriv.ts'
 
 export const initialProfile: UserProfile = {
-  name: 'Alex Carter',
-  email: 'alex@fapriv.com',
-  role: 'Creator & Architect',
+  name: 'Fadhil',
+  nickname: 'Fadhil',
+  email: 'fadhil@fapriv.workspace',
+  role: 'Creator & System Architect',
+  bio: 'Building elegant, secure, and hyper-focused personal digital command centers.',
+  quote: 'Kejelasan pikiran dimulai dari ruang kerja digital yang teratur dan aman.',
   avatarUrl: '/assets/avatar.jpg',
-  quote: 'A more organized you, a more focused tomorrow.',
+  avatarType: 'preset',
+  bannerTheme: 'crimson_silk',
+  badge: 'OWNER',
+  location: 'Indonesia',
+  socials: {
+    github: 'https://github.com/FadhilDEVs',
+    telegram: '',
+    linkedin: '',
+    website: '',
+  },
+  securityPin: '123456',
 }
 
 export const initialCategories: CategoryItem[] = [

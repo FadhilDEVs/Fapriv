@@ -9,7 +9,8 @@ import {
   Clock,
   Settings,
   X,
-  LogOut,
+  Sparkles,
+  Lock,
 } from 'lucide-react'
 import { Logo } from '../common/Logo.tsx'
 import { useWorkspace } from '../../context/WorkspaceContext.tsx'
@@ -19,7 +20,15 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
   isOpen,
   onClose,
 }) => {
-  const { currentView, setCurrentView, profile, stats, deletedItems } = useWorkspace()
+  const {
+    currentView,
+    setCurrentView,
+    profile,
+    stats,
+    deletedItems,
+    setIsProfileModalOpen,
+    lockWorkspace,
+  } = useWorkspace()
 
   if (!isOpen) return null
 
@@ -96,24 +105,42 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
         </nav>
 
         {/* Profile */}
-        <div className="p-4 border-t border-rose-950/40 bg-zinc-950/60">
-          <div className="flex items-center gap-3 mb-3">
-            <img
-              src={profile.avatarUrl || '/assets/avatar.jpg'}
-              alt={profile.name}
-              className="w-10 h-10 rounded-full object-cover border border-rose-600/40"
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{profile.name}</p>
-              <p className="text-xs text-zinc-500 truncate">{profile.email}</p>
+        <div className="p-4 border-t border-rose-950/40 bg-zinc-950/60 space-y-2">
+          <div
+            onClick={() => {
+              setIsProfileModalOpen(true)
+              onClose()
+            }}
+            className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 cursor-pointer hover:border-rose-700/60 transition-all"
+          >
+            <div className="relative shrink-0">
+              <img
+                src={profile.avatarUrl || '/assets/avatar.jpg'}
+                alt={profile.name}
+                className="w-10 h-10 rounded-full object-cover border border-rose-600/40"
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 px-1 py-0.2 rounded bg-rose-900 text-[8px] font-bold text-white">
+                {profile.badge || 'OWNER'}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white truncate flex items-center justify-between">
+                <span>{profile.name}</span>
+                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+              </p>
+              <p className="text-xs text-rose-300/80 truncate font-mono">@{profile.nickname || 'fadhil'}</p>
             </div>
           </div>
+
           <button
-            onClick={() => handleSelect('settings')}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs text-zinc-400 hover:text-white bg-zinc-900/80 border border-zinc-800"
+            onClick={() => {
+              lockWorkspace()
+              onClose()
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-200 bg-rose-950/40 border border-rose-900/40 cursor-pointer"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Pengaturan Akun</span>
+            <Lock className="w-3.5 h-3.5" />
+            <span>Kunci Workspace</span>
           </button>
         </div>
       </div>

@@ -13,9 +13,11 @@ import {
   Sparkles,
   ArrowRight,
   TrendingUp,
+  Edit3,
 } from 'lucide-react'
 import { useWorkspace } from '../../context/WorkspaceContext.tsx'
 import { BrandIcon } from '../common/BrandIcon.tsx'
+import { BANNER_THEMES } from '../modals/ProfileModal.tsx'
 
 export const DashboardView: React.FC = () => {
   const {
@@ -30,16 +32,28 @@ export const DashboardView: React.FC = () => {
     setEditingShortcut,
     setEditingNote,
     openQuickAdd,
+    setIsProfileModalOpen,
   } = useWorkspace()
 
   // Format today's date
   const now = new Date()
-  const dateFormatted = now.toLocaleDateString('en-US', {
+  const hour = now.getHours()
+  const greetingTime =
+    hour < 12 ? 'Selamat Pagi' : hour < 15 ? 'Selamat Siang' : hour < 19 ? 'Selamat Sore' : 'Selamat Malam'
+
+  const dateFormatted = now.toLocaleDateString('id-ID', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   })
+
+  // Determine Banner Gradient
+  const bannerBackground =
+    profile.bannerTheme === 'custom' && profile.customBannerUrl
+      ? `url(${profile.customBannerUrl}) center/cover no-repeat`
+      : BANNER_THEMES.find((b) => b.id === profile.bannerTheme)?.gradient ||
+        'linear-gradient(135deg, #21090D 0%, #16080B 60%, #390509 100%)'
 
   // Filter Quick Access shortcuts (pinned or top favorites)
   const quickAccessList = shortcuts.slice(0, 6)
@@ -50,15 +64,15 @@ export const DashboardView: React.FC = () => {
     <div className="space-y-8 select-none">
       {/* 1. Welcome Banner */}
       <div
-        className="relative overflow-hidden rounded-3xl border p-6 sm:p-8 lg:p-10 shadow-2xl"
+        className="relative overflow-hidden rounded-3xl border p-6 sm:p-8 lg:p-10 shadow-2xl transition-all duration-300"
         style={{
-          background: 'linear-gradient(135deg, #21090D 0%, #16080B 60%, #390509 100%)',
+          background: bannerBackground,
           borderColor: 'rgba(101, 10, 18, 0.5)',
           boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(163, 14, 27, 0.25)',
         }}
       >
         {/* Ambient background image */}
-        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 opacity-35 sm:opacity-55 mix-blend-screen pointer-events-none overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 opacity-30 sm:opacity-45 mix-blend-screen pointer-events-none overflow-hidden">
           <img
             src="/assets/hero_banner.jpg"
             alt="Fapriv Crimson Banner"
@@ -71,18 +85,66 @@ export const DashboardView: React.FC = () => {
         </div>
 
         <div className="relative z-10 max-w-xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-950/60 border border-rose-800/40 text-[11px] font-bold uppercase tracking-wider text-rose-300">
-            <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-            <span>Good morning, {profile.name.split(' ')[0]}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-950/70 border border-rose-800/40 text-[11px] font-bold uppercase tracking-wider text-rose-300 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+              <span>
+                {greetingTime}, {profile.nickname || profile.name.split(' ')[0]} ✨
+              </span>
+            </div>
+
+            <button
+              onClick={() => setIsProfileModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900/60 hover:bg-rose-950/60 border border-zinc-700/60 hover:border-rose-600/50 text-[11px] font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-sm"
+            >
+              <Edit3 className="w-3 h-3 text-rose-400" />
+              <span>Edit Profil</span>
+            </button>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Welcome back.
+            Selamat Datang di Fapriv.
           </h2>
 
           <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-            Everything you need, organized in one private space.
+            {profile.bio || 'Ruang kerja digital pribadi yang aman, teratur, dan eksklusif untuk Anda.'}
           </p>
+
+          {/* Social Links if present */}
+          {(profile.socials?.github || profile.socials?.telegram || profile.socials?.website) && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {profile.socials.github && (
+                <a
+                  href={profile.socials.github}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-zinc-950/60 border border-zinc-800 hover:border-rose-700/50 text-[11px] text-zinc-300 hover:text-white transition-colors"
+                >
+                  GitHub ↗
+                </a>
+              )}
+              {profile.socials.telegram && (
+                <a
+                  href={profile.socials.telegram.startsWith('http') ? profile.socials.telegram : `https://t.me/${profile.socials.telegram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-zinc-950/60 border border-zinc-800 hover:border-rose-700/50 text-[11px] text-zinc-300 hover:text-white transition-colors"
+                >
+                  Telegram ↗
+                </a>
+              )}
+              {profile.socials.website && (
+                <a
+                  href={profile.socials.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-zinc-950/60 border border-zinc-800 hover:border-rose-700/50 text-[11px] text-zinc-300 hover:text-white transition-colors"
+                >
+                  Website ↗
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Date & Inspirational Quote Card */}
           <div
@@ -98,7 +160,7 @@ export const DashboardView: React.FC = () => {
             <div>
               <p className="text-xs font-bold text-white">{dateFormatted}</p>
               <p className="text-[11px] text-zinc-400 italic mt-0.5">
-                "{profile.quote || 'A more organized you, a more focused tomorrow.'}"
+                "{profile.quote || 'Kejelasan pikiran dimulai dari ruang kerja digital yang teratur dan aman.'}"
               </p>
             </div>
           </div>

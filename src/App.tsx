@@ -12,6 +12,8 @@ import { QuickAddModal } from './components/modals/QuickAddModal.tsx'
 import { ShortcutModal } from './components/modals/ShortcutModal.tsx'
 import { NoteEditorModal } from './components/modals/NoteEditorModal.tsx'
 import { ImportantDataModal } from './components/modals/ImportantDataModal.tsx'
+import { ProfileModal } from './components/modals/ProfileModal.tsx'
+import { MasterLockScreen } from './components/common/MasterLockScreen.tsx'
 
 // Views
 import { DashboardView } from './components/views/DashboardView.tsx'
@@ -24,7 +26,8 @@ import { ActivityHistoryView } from './components/views/ActivityHistoryView.tsx'
 import { SettingsView } from './components/views/SettingsView.tsx'
 
 const MainWorkspaceContent: React.FC = () => {
-  const { currentView } = useWorkspace()
+  const { currentView, profile, isLocked, unlockWorkspace, isProfileModalOpen, setIsProfileModalOpen } =
+    useWorkspace()
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
 
   const renderCurrentView = () => {
@@ -81,7 +84,19 @@ const MainWorkspaceContent: React.FC = () => {
       <ShortcutModal />
       <NoteEditorModal />
       <ImportantDataModal />
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
       <ToastContainer />
+
+      {/* Master Security PIN Lock for Sovereign Single-User Access */}
+      <MasterLockScreen
+        profile={profile}
+        isLocked={isLocked}
+        onUnlock={unlockWorkspace}
+        securityPin={profile.securityPin}
+      />
     </div>
   )
 }

@@ -16,7 +16,8 @@ import { useWorkspace } from '../../context/WorkspaceContext.tsx'
 import type { NavView } from '../../types/fapriv.ts'
 
 export const Sidebar: React.FC = () => {
-  const { currentView, setCurrentView, profile, stats, deletedItems } = useWorkspace()
+  const { currentView, setCurrentView, profile, stats, deletedItems, lockWorkspace, setIsProfileModalOpen } =
+    useWorkspace()
 
   const navItems: {
     id: NavView
@@ -108,36 +109,45 @@ export const Sidebar: React.FC = () => {
         style={{ borderColor: 'rgba(101, 10, 18, 0.35)', backgroundColor: 'rgba(33, 9, 13, 0.4)' }}
       >
         <button
-          onClick={() => setCurrentView('settings')}
-          className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/60 transition-all text-left group"
+          onClick={() => setIsProfileModalOpen(true)}
+          className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/60 transition-all text-left group cursor-pointer"
+          title="Kustomisasi Profil Pengguna"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <img
-              src={profile.avatarUrl || '/assets/avatar.jpg'}
-              alt={profile.name}
-              className="w-9 h-9 rounded-full object-cover border border-rose-600/40 shrink-0"
-              onError={(e) => {
-                // Fallback if image fails
-                ;(e.currentTarget as HTMLImageElement).src =
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
-              }}
-            />
+            <div className="relative shrink-0">
+              <img
+                src={profile.avatarUrl || '/assets/avatar.jpg'}
+                alt={profile.name}
+                className="w-9 h-9 rounded-full object-cover border border-rose-600/40"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).src =
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
+                }}
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#16080B]" />
+            </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
-                {profile.name}
-              </p>
-              <p className="text-[10px] text-zinc-400 truncate font-mono">{profile.email}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
+                  {profile.name}
+                </p>
+                <span className="px-1 py-0.2 rounded bg-rose-950/80 border border-rose-800/40 text-[8px] font-bold text-rose-300">
+                  {profile.badge || 'OWNER'}
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-400 truncate font-mono">@{profile.nickname || 'fadhil'}</p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
         </button>
 
         <button
-          onClick={() => setCurrentView('dashboard')}
-          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-zinc-400 hover:text-rose-300 text-xs transition-colors"
+          onClick={lockWorkspace}
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-zinc-400 hover:text-rose-300 hover:bg-rose-950/30 text-xs transition-colors cursor-pointer"
+          title="Kunci Workspace (Alt + L)"
         >
-          <LogOut className="w-3.5 h-3.5" />
-          <span>Lock Session</span>
+          <LogOut className="w-3.5 h-3.5 text-rose-400" />
+          <span>Kunci Workspace</span>
         </button>
       </div>
     </aside>
