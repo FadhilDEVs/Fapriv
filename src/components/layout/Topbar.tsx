@@ -221,7 +221,13 @@ export const Topbar: React.FC<{ onOpenMobileMenu?: () => void }> = ({ onOpenMobi
 
         {/* Cloud Sync Status Indicator */}
         <button
-          onClick={() => syncWithCloud(true)}
+          onClick={() => {
+            if (cloudSyncStatus === 'permission_denied' || cloudSyncStatus === 'pending_setup') {
+              setCurrentView('settings')
+            } else {
+              syncWithCloud(true)
+            }
+          }}
           disabled={cloudSyncStatus === 'syncing'}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all border cursor-pointer group"
           style={{
@@ -231,6 +237,8 @@ export const Topbar: React.FC<{ onOpenMobileMenu?: () => void }> = ({ onOpenMobi
                 ? 'rgba(16, 185, 129, 0.4)'
                 : cloudSyncStatus === 'syncing'
                 ? 'rgba(59, 130, 246, 0.4)'
+                : cloudSyncStatus === 'permission_denied'
+                ? 'rgba(239, 68, 68, 0.5)'
                 : cloudSyncStatus === 'pending_setup'
                 ? 'rgba(245, 158, 11, 0.4)'
                 : 'rgba(101, 10, 18, 0.5)',
@@ -240,6 +248,8 @@ export const Topbar: React.FC<{ onOpenMobileMenu?: () => void }> = ({ onOpenMobi
               ? `Tersinkronisasi ke Cloud (${lastSyncedAt || 'Baru saja'}). Klik untuk sinkron ulang.`
               : cloudSyncStatus === 'syncing'
               ? 'Sedang menyinkronkan data dengan Supabase...'
+              : cloudSyncStatus === 'permission_denied'
+              ? 'Izin tabel belum diberikan (Error 42501). Klik untuk petunjuk.'
               : cloudSyncStatus === 'pending_setup'
               ? 'Tabel Supabase belum dibuat. Klik untuk info.'
               : 'Klik untuk sinkronkan data ke Cloud'
@@ -252,6 +262,8 @@ export const Topbar: React.FC<{ onOpenMobileMenu?: () => void }> = ({ onOpenMobi
               className={`w-3.5 h-3.5 ${
                 cloudSyncStatus === 'synced'
                   ? 'text-emerald-400'
+                  : cloudSyncStatus === 'permission_denied'
+                  ? 'text-rose-400'
                   : cloudSyncStatus === 'pending_setup'
                   ? 'text-amber-400'
                   : 'text-zinc-400 group-hover:text-rose-400'
@@ -264,6 +276,8 @@ export const Topbar: React.FC<{ onOpenMobileMenu?: () => void }> = ({ onOpenMobi
                 ? 'text-emerald-300'
                 : cloudSyncStatus === 'syncing'
                 ? 'text-blue-300'
+                : cloudSyncStatus === 'permission_denied'
+                ? 'text-rose-300'
                 : cloudSyncStatus === 'pending_setup'
                 ? 'text-amber-300'
                 : 'text-zinc-400'
@@ -273,6 +287,8 @@ export const Topbar: React.FC<{ onOpenMobileMenu?: () => void }> = ({ onOpenMobi
               ? 'Cloud Sync Aktif'
               : cloudSyncStatus === 'syncing'
               ? 'Sinkronisasi...'
+              : cloudSyncStatus === 'permission_denied'
+              ? 'Izin Diperlukan'
               : cloudSyncStatus === 'pending_setup'
               ? 'Setup Cloud'
               : 'Sinkron'}

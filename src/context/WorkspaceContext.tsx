@@ -328,6 +328,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [lockWorkspace])
 
+  // Last saved data tracker to prevent duplicate saves and infinite loops
+  const lastSavedDataJsonRef = useRef<string>('')
+
   // Cloud Sync Handler
   const syncWithCloud = useCallback(
     async (forcePush = false) => {
@@ -346,12 +349,29 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         })
         if (res.success) {
           setCloudSyncStatus('synced')
+          lastSavedDataJsonRef.current = JSON.stringify({
+            profile,
+            shortcuts,
+            notes,
+            importantData,
+            categories,
+            tags,
+            activities,
+            deletedItems,
+          })
           const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           setLastSyncedAt(timeStr)
           addToast({
             type: 'success',
             title: 'Tersinkronisasi ke Cloud!',
             description: 'Data terbaru berhasil diunggah ke Supabase.',
+          })
+        } else if (res.isPermissionDenied) {
+          setCloudSyncStatus('permission_denied')
+          addToast({
+            type: 'warning',
+            title: 'Izin Tabel Ditolak (Error 42501)',
+            description: 'Jalankan perintah GRANT di Supabase SQL Editor.',
           })
         } else if (res.isTableMissing) {
           setCloudSyncStatus('pending_setup')
@@ -381,6 +401,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (res.data.activities?.length) setActivities(res.data.activities)
           if (res.data.deletedItems) setDeletedItems(res.data.deletedItems)
           setCloudSyncStatus('synced')
+          lastSavedDataJsonRef.current = JSON.stringify({
+            profile: res.data.profile,
+            shortcuts: res.data.shortcuts,
+            notes: res.data.notes,
+            importantData: res.data.importantData,
+            categories: res.data.categories,
+            tags: res.data.tags,
+            activities: res.data.activities,
+            deletedItems: res.data.deletedItems,
+          })
           const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           setLastSyncedAt(timeStr)
           setTimeout(() => {
@@ -388,7 +418,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }, 400)
           addToast({ type: 'success', title: 'Data Cloud Berhasil Diunduh' })
         } else if (res.success && !res.data) {
-          // Table exists but is empty (newly created table) -> Push current local workspace
+          // Table exists but is empty -> Push current local workspace
           const pushRes = await pushRemoteWorkspace({
             profile,
             shortcuts,
@@ -402,6 +432,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           })
           if (pushRes.success) {
             setCloudSyncStatus('synced')
+            lastSavedDataJsonRef.current = JSON.stringify({
+              profile,
+              shortcuts,
+              notes,
+              importantData,
+              categories,
+              tags,
+              activities,
+              deletedItems,
+            })
             const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
             setLastSyncedAt(timeStr)
             addToast({
@@ -409,9 +449,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               title: 'Tersinkronisasi ke Cloud!',
               description: 'Data awal berhasil disimpan ke Supabase.',
             })
+          } else if (pushRes.isPermissionDenied) {
+            setCloudSyncStatus('permission_denied')
           } else {
             setCloudSyncStatus('error')
           }
+        } else if (res.isPermissionDenied) {
+          setCloudSyncStatus('permission_denied')
         } else if (res.isTableMissing) {
           setCloudSyncStatus('pending_setup')
         } else {
@@ -431,6 +475,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const res = await fetchRemoteWorkspace()
       if (!isMounted) return
 
+      if (res.isPermissionDenied) {
+        setCloudSyncStatus('permission_denied')
+        isCloudInitializedRef.current = true
+        return
+      }
+
       if (res.isTableMissing) {
         setCloudSyncStatus('pending_setup')
         isCloudInitializedRef.current = true
@@ -449,7 +499,18 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (res.data.activities?.length) setActivities(res.data.activities)
           if (res.data.deletedItems) setDeletedItems(res.data.deletedItems)
           setCloudSyncStatus('synced')
-          setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+          lastSavedDataJsonRef.current = JSON.stringify({
+            profile: res.data.profile,
+            shortcuts: res.data.shortcuts,
+            notes: res.data.notes,
+            importantData: res.data.importantData,
+            categories: res.data.categories,
+            tags: res.data.tags,
+            activities: res.data.activities,
+            deletedItems: res.data.deletedItems,
+          })
+          const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          setLastSyncedAt(timeStr)
           setTimeout(() => {
             isRemoteUpdatingRef.current = false
           }, 400)
@@ -468,7 +529,19 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           })
           if (pushRes.success) {
             setCloudSyncStatus('synced')
+            lastSavedDataJsonRef.current = JSON.stringify({
+              profile,
+              shortcuts,
+              notes,
+              importantData,
+              categories,
+              tags,
+              activities,
+              deletedItems,
+            })
             setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+          } else if (pushRes.isPermissionDenied) {
+            setCloudSyncStatus('permission_denied')
           } else if (pushRes.isTableMissing) {
             setCloudSyncStatus('pending_setup')
           }
@@ -485,7 +558,26 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Realtime cross-device updates listener
     const unsubscribe = subscribeToWorkspaceChanges((incoming) => {
       if (!isMounted) return
+
+      const incomingJson = JSON.stringify({
+        profile: incoming.profile,
+        shortcuts: incoming.shortcuts,
+        notes: incoming.notes,
+        importantData: incoming.importantData,
+        categories: incoming.categories,
+        tags: incoming.tags,
+        activities: incoming.activities,
+        deletedItems: incoming.deletedItems,
+      })
+
+      // If incoming payload is identical to our last saved or current data, ignore it completely!
+      if (incomingJson === lastSavedDataJsonRef.current) {
+        return
+      }
+
       isRemoteUpdatingRef.current = true
+      lastSavedDataJsonRef.current = incomingJson
+
       setProfileState((prev) => ({ ...prev, ...incoming.profile }))
       setShortcuts(incoming.shortcuts)
       setNotes(incoming.notes)
@@ -495,10 +587,11 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (incoming.activities?.length) setActivities(incoming.activities)
       if (incoming.deletedItems) setDeletedItems(incoming.deletedItems)
       setCloudSyncStatus('synced')
+
       setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
       setTimeout(() => {
         isRemoteUpdatingRef.current = false
-      }, 400)
+      }, 500)
     })
 
     return () => {
@@ -507,10 +600,24 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [])
 
-  // Debounced auto-save to Supabase Cloud on any local state mutation
+  // Debounced auto-save to Supabase Cloud ONLY when actual content changes
   useEffect(() => {
     if (!isCloudInitializedRef.current || isRemoteUpdatingRef.current) return
-    if (cloudSyncStatus === 'pending_setup') return
+    if (cloudSyncStatus === 'pending_setup' || cloudSyncStatus === 'permission_denied') return
+
+    const currentJson = JSON.stringify({
+      profile,
+      shortcuts,
+      notes,
+      importantData,
+      categories,
+      tags,
+      activities,
+      deletedItems,
+    })
+
+    // Skip if data hasn't changed since last sync
+    if (currentJson === lastSavedDataJsonRef.current) return
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
@@ -531,19 +638,22 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       })
 
       if (res.success) {
+        lastSavedDataJsonRef.current = currentJson
         setCloudSyncStatus('synced')
         setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
+      } else if (res.isPermissionDenied) {
+        setCloudSyncStatus('permission_denied')
       } else if (res.isTableMissing) {
         setCloudSyncStatus('pending_setup')
       } else {
         setCloudSyncStatus('error')
       }
-    }, 700)
+    }, 1000)
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
-  }, [profile, shortcuts, notes, importantData, categories, tags, activities, deletedItems, cloudSyncStatus])
+  }, [profile, shortcuts, notes, importantData, categories, tags, activities, deletedItems])
 
   // Modals helper
   const openQuickAdd = (type?: 'shortcut' | 'note' | 'important_data') => {

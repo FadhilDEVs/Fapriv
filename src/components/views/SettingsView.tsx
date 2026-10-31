@@ -18,10 +18,11 @@ import {
   RefreshCw,
   Copy,
   Code,
+  AlertTriangle,
 } from 'lucide-react'
 import { useWorkspace } from '../../context/WorkspaceContext.tsx'
 import { useSupabaseStatus } from '../../hooks/useSupabaseStatus.ts'
-import { SQL_SCHEMA_INSTRUCTION } from '../../services/cloudWorkspace.ts'
+import { SQL_SCHEMA_INSTRUCTION, GRANT_SQL_SNIPPET } from '../../services/cloudWorkspace.ts'
 
 export const SettingsView: React.FC = () => {
   const {
@@ -463,6 +464,8 @@ export const SettingsView: React.FC = () => {
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   : cloudSyncStatus === 'syncing'
                   ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  : cloudSyncStatus === 'permission_denied'
+                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                   : cloudSyncStatus === 'pending_setup'
                   ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                   : 'bg-zinc-900 text-zinc-400 border-zinc-800'
@@ -478,6 +481,8 @@ export const SettingsView: React.FC = () => {
                   ? 'Tersinkronisasi'
                   : cloudSyncStatus === 'syncing'
                   ? 'Sedang Menyinkronkan...'
+                  : cloudSyncStatus === 'permission_denied'
+                  ? 'Izin Diperlukan (GRANT)'
                   : cloudSyncStatus === 'pending_setup'
                   ? 'Tabel Belum Dibuat'
                   : 'Mode Offline'}
@@ -526,6 +531,42 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Permission Denied Guide Box (Error 42501) */}
+        {cloudSyncStatus === 'permission_denied' && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-rose-950/40 border border-rose-600/50 space-y-3 animate-in fade-in duration-200">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 shrink-0 mt-0.5">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-white">
+                  Tabel Supabase Terdeteksi, Namun Perlu Hak Akses Role (Error 42501)
+                </h4>
+                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                  PostgreSQL di Supabase mewajibkan perintah <code className="text-rose-300 font-mono">GRANT</code> agar client diizinkan membaca & menulis data. Salin dan jalankan perintah singkat di bawah ini di SQL Editor Supabase:
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-xl bg-black/80 border border-rose-800/40">
+              <pre className="text-xs text-rose-200 font-mono select-all overflow-x-auto py-1">
+                {GRANT_SQL_SNIPPET}
+              </pre>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(GRANT_SQL_SNIPPET, 'Perintah GRANT')}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg transition-all shrink-0 cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Salin Perintah GRANT</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-zinc-400 italic">
+              Setelah klik "Run" di SQL Editor Supabase, kembali ke sini dan tekan tombol merah "Sinkronkan Sekarang".
+            </p>
+          </div>
+        )}
 
         {/* SQL Schema helper box */}
         {showSqlModal && (

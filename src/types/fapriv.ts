@@ -123,7 +123,13 @@ export interface UserProfile {
   securityPin?: string
 }
 
-export type CloudSyncStatus = 'synced' | 'syncing' | 'offline' | 'error' | 'pending_setup'
+export type CloudSyncStatus =
+  | 'synced'
+  | 'syncing'
+  | 'offline'
+  | 'error'
+  | 'pending_setup'
+  | 'permission_denied'
 
 export interface ToastMessage {
   id: string

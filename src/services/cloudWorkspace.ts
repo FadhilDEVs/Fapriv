@@ -24,6 +24,9 @@ export interface CloudWorkspacePayload {
   securityPin?: string
 }
 
+export const GRANT_SQL_SNIPPET = `GRANT ALL ON TABLE public.fapriv_workspace TO anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;`
+
 export const SQL_SCHEMA_INSTRUCTION = `-- Jalankan SQL ini di Dashboard Supabase > SQL Editor > Run:
 CREATE TABLE IF NOT EXISTS public.fapriv_workspace (
   id text PRIMARY KEY,
@@ -38,6 +41,10 @@ CREATE TABLE IF NOT EXISTS public.fapriv_workspace (
   security_pin text DEFAULT '123456',
   updated_at timestamptz DEFAULT now()
 );
+
+-- Berikan izin akses penuh ke role anon & authenticated
+GRANT ALL ON TABLE public.fapriv_workspace TO anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
 
 -- Buka izin akses untuk aplikasi personal Fapriv
 ALTER TABLE public.fapriv_workspace ENABLE ROW LEVEL SECURITY;
@@ -62,6 +69,7 @@ export async function fetchRemoteWorkspace(): Promise<{
   data?: CloudWorkspacePayload
   error?: string
   isTableMissing?: boolean
+  isPermissionDenied?: boolean
 }> {
   if (!supabase) {
     return { success: false, error: 'Supabase client belum terkonfigurasi (.env)' }
@@ -74,7 +82,9 @@ export async function fetchRemoteWorkspace(): Promise<{
       .maybeSingle()
 
     if (error) {
-      // Check if table missing (Postgres error code 42P01)
+      if (error.code === '42501' || error.message?.includes('permission denied')) {
+        return { success: false, error: error.message, isPermissionDenied: true }
+      }
       if (error.code === '42P01' || error.message?.includes('relation "public.fapriv_workspace" does not exist')) {
         return { success: false, error: error.message, isTableMissing: true }
       }
@@ -104,6 +114,12 @@ export async function fetchRemoteWorkspace(): Promise<{
   }
 }
 
+// Unique tab session ID to prevent echo/feedback loops
+export const CLIENT_SESSION_ID =
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : 'session_' + Math.random().toString(36).substring(2) + Date.now().toString(36)
+
 /**
  * Push current local workspace to Supabase Cloud
  */
@@ -111,16 +127,23 @@ export async function pushRemoteWorkspace(payload: CloudWorkspacePayload): Promi
   success: boolean
   error?: string
   isTableMissing?: boolean
+  isPermissionDenied?: boolean
 }> {
   if (!supabase) {
     return { success: false, error: 'Supabase client belum terkonfigurasi' }
   }
 
   try {
+    // Embed _originClientId inside profile object so Realtime listener knows who sent it
+    const profileWithOrigin = {
+      ...(payload.profile || {}),
+      _originClientId: CLIENT_SESSION_ID,
+    }
+
     const { error } = await (supabase.from('fapriv_workspace') as any).upsert(
       {
         id: PRIMARY_WORKSPACE_ID,
-        profile: payload.profile as any,
+        profile: profileWithOrigin as any,
         shortcuts: payload.shortcuts as any,
         notes: payload.notes as any,
         important_data: payload.importantData as any,
@@ -135,6 +158,9 @@ export async function pushRemoteWorkspace(payload: CloudWorkspacePayload): Promi
     )
 
     if (error) {
+      if (error.code === '42501' || error.message?.includes('permission denied')) {
+        return { success: false, error: error.message, isPermissionDenied: true }
+      }
       if (error.code === '42P01' || error.message?.includes('relation "public.fapriv_workspace" does not exist')) {
         return { success: false, error: error.message, isTableMissing: true }
       }
@@ -168,8 +194,21 @@ export function subscribeToWorkspaceChanges(onRemoteUpdate: (payload: CloudWorks
         (payload: any) => {
           if (payload.new) {
             const row = payload.new
+            const incomingProfile = (row.profile || {}) as any
+
+            // CRITICAL FIX: Ignore events that originated from THIS browser tab/session!
+            // This stops the infinite loop / rollback where an edit immediately gets overwritten
+            // by its own incoming echo before the user can finish typing or saving.
+            if (incomingProfile._originClientId === CLIENT_SESSION_ID) {
+              return
+            }
+
+            // Clean internal flag before applying to local state
+            const cleanedProfile = { ...incomingProfile }
+            delete cleanedProfile._originClientId
+
             const incomingData: CloudWorkspacePayload = {
-              profile: (row.profile || {}) as UserProfile,
+              profile: cleanedProfile as UserProfile,
               shortcuts: (row.shortcuts || []) as ShortcutItem[],
               notes: (row.notes || []) as NoteItem[],
               importantData: (row.important_data || []) as ImportantDataItem[],

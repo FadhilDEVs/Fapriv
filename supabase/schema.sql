@@ -1,10 +1,7 @@
 -- ========================================================
 -- FAPRIV: Universal Cloud Workspace SQL Schema for Supabase
 -- ========================================================
--- Jalankan skrip ini sekali di Supabase Dashboard:
--- 1. Buka https://supabase.com/dashboard/project/igdddbjlkxqibgmwqitj
--- 2. Pilih menu "SQL Editor" di bilah kiri
--- 3. Tempel SQL di bawah ini lalu klik tombol "Run"
+-- Jalankan skrip ini di Supabase Dashboard > SQL Editor > Run:
 -- ========================================================
 
 CREATE TABLE IF NOT EXISTS public.fapriv_workspace (
@@ -20,6 +17,10 @@ CREATE TABLE IF NOT EXISTS public.fapriv_workspace (
   security_pin text DEFAULT '123456',
   updated_at timestamptz DEFAULT now()
 );
+
+-- Berikan izin akses penuh ke role anon dan authenticated (WAJIB agar tidak 'permission denied')
+GRANT ALL ON TABLE public.fapriv_workspace TO anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
 
 -- Aktifkan Row Level Security (RLS)
 ALTER TABLE public.fapriv_workspace ENABLE ROW LEVEL SECURITY;
