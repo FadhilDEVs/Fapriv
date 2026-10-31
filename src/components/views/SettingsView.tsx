@@ -489,7 +489,9 @@ export const SettingsView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800/80 space-y-1.5">
             <p className="text-[11px] text-zinc-400 font-medium">Status Koneksi Supabase</p>
-            <p className="text-xs font-bold text-white font-mono truncate">{urlPreview}</p>
+            <p className="text-xs font-bold text-white font-mono truncate">
+              {urlPreview || 'igdddbjlkxqibgmwqitj.supabase.co'}
+            </p>
             <p className="text-[10px] text-zinc-500">
               Sinkronisasi Terakhir: {lastSyncedAt ? `${lastSyncedAt}` : 'Belum pernah'}
             </p>

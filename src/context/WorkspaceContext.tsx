@@ -387,6 +387,31 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             isRemoteUpdatingRef.current = false
           }, 400)
           addToast({ type: 'success', title: 'Data Cloud Berhasil Diunduh' })
+        } else if (res.success && !res.data) {
+          // Table exists but is empty (newly created table) -> Push current local workspace
+          const pushRes = await pushRemoteWorkspace({
+            profile,
+            shortcuts,
+            notes,
+            importantData,
+            categories,
+            tags,
+            activities,
+            deletedItems,
+            securityPin: profile.securityPin || '123456',
+          })
+          if (pushRes.success) {
+            setCloudSyncStatus('synced')
+            const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+            setLastSyncedAt(timeStr)
+            addToast({
+              type: 'success',
+              title: 'Tersinkronisasi ke Cloud!',
+              description: 'Data awal berhasil disimpan ke Supabase.',
+            })
+          } else {
+            setCloudSyncStatus('error')
+          }
         } else if (res.isTableMissing) {
           setCloudSyncStatus('pending_setup')
         } else {
