@@ -1,4 +1,5 @@
 export * from './database.ts'
+export * from './fapriv.ts'
 
 export interface AppConfig {
   appName: string
