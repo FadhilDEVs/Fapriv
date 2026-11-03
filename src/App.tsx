@@ -26,9 +26,11 @@ import { ActivityHistoryView } from './components/views/ActivityHistoryView.tsx'
 import { SettingsView } from './components/views/SettingsView.tsx'
 
 const MainWorkspaceContent: React.FC = () => {
-  const { currentView, profile, isLocked, unlockWorkspace, isProfileModalOpen, setIsProfileModalOpen } =
+  const { currentView, profile, isLocked, unlockWorkspace, isProfileModalOpen, setIsProfileModalOpen, theme } =
     useWorkspace()
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
+
+  const isLight = theme === 'light'
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -54,10 +56,23 @@ const MainWorkspaceContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex w-full relative bg-[#16080B] text-white overflow-x-hidden">
-      {/* Subtle ambient luxury crimson lighting */}
-      <div className="pointer-events-none fixed -top-40 -left-20 w-[600px] h-[600px] bg-rose-950/20 blur-[160px] rounded-full z-0" />
-      <div className="pointer-events-none fixed bottom-0 right-0 w-[500px] h-[500px] bg-red-950/15 blur-[180px] rounded-full z-0" />
+    <div
+      className={`min-h-screen flex w-full relative transition-colors duration-300 overflow-x-hidden ${
+        isLight ? 'bg-[#F0F6FF] text-slate-800' : 'bg-[#16080B] text-white'
+      }`}
+    >
+      {/* Subtle ambient lighting */}
+      {!isLight ? (
+        <>
+          <div className="pointer-events-none fixed -top-40 -left-20 w-[600px] h-[600px] bg-rose-950/20 blur-[160px] rounded-full z-0" />
+          <div className="pointer-events-none fixed bottom-0 right-0 w-[500px] h-[500px] bg-red-950/15 blur-[180px] rounded-full z-0" />
+        </>
+      ) : (
+        <>
+          <div className="pointer-events-none fixed -top-40 -left-20 w-[600px] h-[600px] bg-blue-200/40 blur-[140px] rounded-full z-0" />
+          <div className="pointer-events-none fixed bottom-0 right-0 w-[500px] h-[500px] bg-sky-200/30 blur-[160px] rounded-full z-0" />
+        </>
+      )}
 
       {/* Desktop Sidebar */}
       <Sidebar />

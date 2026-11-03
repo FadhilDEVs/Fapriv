@@ -657,7 +657,58 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Modals helper
   const openQuickAdd = (type?: 'shortcut' | 'note' | 'important_data') => {
-    setQuickAddType(type || null)
+    if (type === 'shortcut') {
+      setEditingShortcut({
+        id: '',
+        title: '',
+        url: 'https://',
+        description: '',
+        category: categories[0]?.name ?? 'Work',
+        tags: [],
+        isFavorite: false,
+        isPinned: false,
+        createdAt: '',
+        updatedAt: '',
+      })
+      setIsQuickAddOpen(false)
+      return
+    }
+
+    if (type === 'note') {
+      setEditingNote({
+        id: '',
+        title: '',
+        content: '',
+        category: categories[0]?.name ?? 'Personal',
+        tags: [],
+        isFavorite: false,
+        isPinned: false,
+        createdAt: '',
+        updatedAt: '',
+      })
+      setIsQuickAddOpen(false)
+      return
+    }
+
+    if (type === 'important_data') {
+      setEditingData({
+        id: '',
+        title: '',
+        value: '',
+        description: '',
+        dataType: 'text',
+        category: categories[0]?.name ?? 'Keuangan',
+        tags: [],
+        isFavorite: false,
+        isPinned: false,
+        createdAt: '',
+        updatedAt: '',
+      })
+      setIsQuickAddOpen(false)
+      return
+    }
+
+    setQuickAddType(null)
     setIsQuickAddOpen(true)
   }
 

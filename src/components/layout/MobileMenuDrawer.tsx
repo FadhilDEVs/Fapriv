@@ -28,9 +28,12 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
     deletedItems,
     setIsProfileModalOpen,
     lockWorkspace,
+    theme,
   } = useWorkspace()
 
   if (!isOpen) return null
+
+  const isLight = theme === 'light'
 
   const navItems: { id: NavView; label: string; icon: React.ElementType; badge?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -52,24 +55,35 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
     <div className="fixed inset-0 z-50 md:hidden flex">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+        className={`fixed inset-0 backdrop-blur-sm animate-in fade-in duration-200 ${
+          isLight ? 'bg-slate-900/40' : 'bg-black/80'
+        }`}
         onClick={onClose}
       />
 
       {/* Drawer panel */}
       <div
-        className="relative flex-1 max-w-xs w-full h-full flex flex-col border-r z-10 animate-in slide-in-from-left duration-250 select-none"
-        style={{
-          backgroundColor: '#16080B',
-          borderColor: 'rgba(101, 10, 18, 0.5)',
-        }}
+        className={`relative flex-1 max-w-xs w-full h-full flex flex-col border-r z-10 animate-in slide-in-from-left duration-250 select-none ${
+          isLight ? 'bg-white border-slate-200' : ''
+        }`}
+        style={
+          isLight
+            ? { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }
+            : { backgroundColor: '#16080B', borderColor: 'rgba(101, 10, 18, 0.5)' }
+        }
       >
         {/* Header */}
-        <div className="p-5 flex items-center justify-between border-b border-rose-950/40">
+        <div className={`p-5 flex items-center justify-between border-b ${
+          isLight ? 'border-slate-100 bg-slate-50/50' : 'border-rose-950/40'
+        }`}>
           <Logo size="sm" />
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-white bg-zinc-900/60"
+            className={`p-1.5 rounded-xl transition-colors ${
+              isLight
+                ? 'text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200'
+                : 'text-zinc-400 hover:text-white bg-zinc-900/60'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -86,16 +100,28 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
                 onClick={() => handleSelect(item.id)}
                 className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors ${
                   isActive
-                    ? 'text-white bg-rose-950/60 border border-rose-600/40 shadow-lg shadow-rose-950/30'
+                    ? isLight
+                      ? 'text-blue-600 bg-blue-50 border border-blue-200 shadow-sm'
+                      : 'text-white bg-rose-950/60 border border-rose-600/40 shadow-lg shadow-rose-950/30'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-900/40'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-rose-400' : 'text-zinc-500'}`} />
+                  <Icon className={`w-4 h-4 ${
+                    isActive
+                      ? isLight ? 'text-blue-600' : 'text-rose-400'
+                      : isLight ? 'text-slate-400' : 'text-zinc-500'
+                  }`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-zinc-900 text-zinc-400 border border-zinc-800">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-mono border ${
+                    isLight
+                      ? 'bg-slate-100 text-slate-600 border-slate-200'
+                      : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
@@ -105,13 +131,19 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
         </nav>
 
         {/* Profile */}
-        <div className="p-4 border-t border-rose-950/40 bg-zinc-950/60 space-y-2">
+        <div className={`p-4 border-t space-y-2 ${
+          isLight ? 'border-slate-100 bg-slate-50/70' : 'border-rose-950/40 bg-zinc-950/60'
+        }`}>
           <div
             onClick={() => {
               setIsProfileModalOpen(true)
               onClose()
             }}
-            className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 cursor-pointer hover:border-rose-700/60 transition-all"
+            className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${
+              isLight
+                ? 'bg-white border-slate-200 hover:border-blue-300 shadow-sm'
+                : 'bg-zinc-900/60 border-zinc-800/80 hover:border-rose-700/60'
+            }`}
           >
             <div className="relative shrink-0">
               <img
@@ -119,16 +151,22 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
                 alt={profile.name}
                 className="w-10 h-10 rounded-full object-cover border border-rose-600/40"
               />
-              <span className="absolute -bottom-0.5 -right-0.5 px-1 py-0.2 rounded bg-rose-900 text-[8px] font-bold text-white">
+              <span className={`absolute -bottom-0.5 -right-0.5 px-1 py-0.2 rounded text-[8px] font-bold text-white ${
+                isLight ? 'bg-blue-600' : 'bg-rose-900'
+              }`}>
                 {profile.badge || 'OWNER'}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate flex items-center justify-between">
+              <p className={`text-sm font-semibold truncate flex items-center justify-between ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}>
                 <span>{profile.name}</span>
-                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                <Sparkles className={`w-3.5 h-3.5 ${isLight ? 'text-blue-500' : 'text-rose-400'}`} />
               </p>
-              <p className="text-xs text-rose-300/80 truncate font-mono">@{profile.nickname || 'fadhil'}</p>
+              <p className={`text-xs truncate font-mono ${
+                isLight ? 'text-blue-600' : 'text-rose-300/80'
+              }`}>@{profile.nickname || 'fadhil'}</p>
             </div>
           </div>
 
@@ -137,7 +175,11 @@ export const MobileMenuDrawer: React.FC<{ isOpen: boolean; onClose: () => void }
               lockWorkspace()
               onClose()
             }}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-200 bg-rose-950/40 border border-rose-900/40 cursor-pointer"
+            className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+              isLight
+                ? 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200'
+                : 'text-rose-400 hover:text-rose-200 bg-rose-950/40 border border-rose-900/40'
+            }`}
           >
             <Lock className="w-3.5 h-3.5" />
             <span>Kunci Workspace</span>

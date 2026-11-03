@@ -2,44 +2,52 @@
 
 @layer base {
   :root {
-    --bg-main: #16080b;
-    --bg-secondary: #21090d;
-    --deep-burgundy: #390509;
-    --burgundy-surface: #48080e;
-    --crimson: #650a12;
-    --primary-red: #a30e1b;
-    --accent-red: #d51f2b;
-    --glow-red: #ff303b;
-    --text-primary: #ffffff;
-    --text-secondary: #c7b8ba;
-    --text-muted: #8c777b;
-    --border-color: rgba(101, 10, 18, 0.4);
-    --card-bg: rgba(33, 9, 13, 0.7);
+    --bg-page: #16080b;
+    --bg-sidebar: #16080b;
+    --bg-card: rgba(33, 9, 13, 0.75);
+    --bg-card-hover: rgba(45, 12, 17, 0.9);
+    --bg-surface: rgba(22, 8, 11, 0.85);
+    --bg-input: rgba(33, 9, 13, 0.6);
+    --border-main: rgba(101, 10, 18, 0.4);
+    --border-highlight: rgba(213, 31, 43, 0.4);
+    --text-title: #ffffff;
+    --text-body: #e4d7d9;
+    --text-sub: #a18e91;
+    --accent-btn: linear-gradient(135deg, #d51f2b 0%, #a30e1b 60%, #650a12 100%);
+    --accent-btn-shadow: 0 0 20px -3px rgba(213, 31, 43, 0.45);
+    --accent-primary: #d51f2b;
+    --accent-hover: #ff303b;
+    --stat-gradient: linear-gradient(90deg, #d51f2b 0%, #ff303b 100%);
+    --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
   }
 
   .light {
-    --bg-main: #fbf7f7;
-    --bg-secondary: #f4ebeb;
-    --deep-burgundy: #f0dedf;
-    --burgundy-surface: #ffffff;
-    --crimson: #a30e1b;
-    --primary-red: #8f0d18;
-    --accent-red: #c01824;
-    --glow-red: #d51f2b;
-    --text-primary: #1a080c;
-    --text-secondary: #5a4246;
-    --text-muted: #8c777b;
-    --border-color: rgba(163, 14, 27, 0.15);
-    --card-bg: rgba(255, 255, 255, 0.9);
+    --bg-page: #f0f6ff;
+    --bg-sidebar: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-surface: rgba(255, 255, 255, 0.9);
+    --bg-input: #f1f5f9;
+    --border-main: #e2e8f0;
+    --border-highlight: rgba(37, 99, 235, 0.35);
+    --text-title: #0f172a;
+    --text-body: #334155;
+    --text-sub: #64748b;
+    --accent-btn: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --accent-btn-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.35);
+    --accent-primary: #2563eb;
+    --accent-hover: #3b82f6;
+    --stat-gradient: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+    --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
   }
 
   body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
+    background-color: var(--bg-page);
+    color: var(--text-body);
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   /* Custom subtle scrollbar */
@@ -54,44 +62,45 @@
     background: #48080e;
     border-radius: 9999px;
   }
+  .light ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+  }
   ::-webkit-scrollbar-thumb:hover {
     background: #650a12;
   }
+  .light ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
 }
 
-/* Custom Crimson Glows & Borders */
-.crimson-glow {
-  box-shadow: 0 0 25px -5px rgba(213, 31, 43, 0.35);
+/* Glass & Card themes */
+.app-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-main);
+  box-shadow: var(--card-shadow);
+  transition: all 0.25s ease;
 }
 
-.crimson-glow-sm {
-  box-shadow: 0 0 15px -3px rgba(255, 48, 59, 0.25);
+.app-card:hover {
+  border-color: var(--border-highlight);
 }
 
-.crimson-border {
-  border-color: rgba(101, 10, 18, 0.6);
+.light .app-card {
+  box-shadow: 0 4px 20px -2px rgba(37, 99, 235, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
 }
 
-.crimson-border-hover:hover {
-  border-color: rgba(213, 31, 43, 0.6);
+.app-btn-primary {
+  background: var(--accent-btn);
+  box-shadow: var(--accent-btn-shadow);
+  color: #ffffff;
+  transition: all 0.2s ease;
 }
 
-.crimson-gradient-btn {
-  background: linear-gradient(135deg, #a30e1b 0%, #650a12 100%);
+.app-btn-primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
-.crimson-gradient-btn:hover {
-  background: linear-gradient(135deg, #d51f2b 0%, #880b16 100%);
-}
-
-.crimson-card {
-  background: rgba(33, 9, 13, 0.65);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(101, 10, 18, 0.35);
-}
-
-.light .crimson-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(163, 14, 27, 0.15);
+.app-btn-primary:active {
+  transform: translateY(0);
 }

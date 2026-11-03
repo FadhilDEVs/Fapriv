@@ -5,9 +5,7 @@ import {
   Pin,
   FileText,
   Copy,
-  History,
   Check,
-  Image as ImageIcon,
 } from 'lucide-react'
 import { useWorkspace } from '../../context/WorkspaceContext.tsx'
 import type { NoteItem } from '../../types/fapriv.ts'
@@ -20,7 +18,10 @@ export const NoteEditorModal: React.FC = () => {
     updateNote,
     categories,
     copyToClipboard,
+    theme,
   } = useWorkspace()
+
+  const isLight = theme === 'light'
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -32,7 +33,6 @@ export const NoteEditorModal: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined)
 
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved')
-  const [showHistory, setShowHistory] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -126,44 +126,64 @@ export const NoteEditorModal: React.FC = () => {
   const handleCopyContent = () => copyToClipboard(content, 'Isi Catatan')
   const handleCopyAll = () => copyToClipboard(`${title}\n\n${content}`, 'Judul & Seluruh Catatan')
 
-  const availableImages = [
-    { label: 'Laptop Crimson', src: '/assets/note_laptop.jpg' },
-    { label: 'Book Crimson', src: '/assets/note_book.jpg' },
-    { label: 'Japan Torii', src: '/assets/note_japan.jpg' },
-  ]
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 select-none">
       <div
-        className="fixed inset-0 bg-black/85 backdrop-blur-sm animate-in fade-in"
+        className={`fixed inset-0 backdrop-blur-sm animate-in fade-in ${
+          isLight ? 'bg-slate-900/40' : 'bg-black/85'
+        }`}
         onClick={() => setEditingNote(null)}
       />
 
       <div
-        className="relative w-full max-w-3xl rounded-2xl border backdrop-blur-2xl shadow-2xl flex flex-col max-h-[92vh] z-10 animate-in fade-in zoom-in-95 overflow-hidden"
-        style={{
-          backgroundColor: '#16080B',
-          borderColor: 'rgba(213, 31, 43, 0.4)',
-          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px -5px rgba(213, 31, 43, 0.3)',
-        }}
+        className={`relative w-full max-w-3xl rounded-2xl border backdrop-blur-2xl shadow-2xl flex flex-col max-h-[92vh] z-10 animate-in fade-in zoom-in-95 overflow-hidden ${
+          isLight ? 'bg-white border-slate-200 text-slate-800' : ''
+        }`}
+        style={
+          isLight
+            ? {
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E2E8F0',
+                boxShadow: '0 20px 45px -10px rgba(37, 99, 235, 0.12), 0 0 20px rgba(0, 0, 0, 0.05)',
+              }
+            : {
+                backgroundColor: '#16080B',
+                borderColor: 'rgba(213, 31, 43, 0.4)',
+                boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px -5px rgba(213, 31, 43, 0.3)',
+              }
+        }
       >
         {/* Header bar */}
-        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-rose-950/40 shrink-0">
+        <div
+          className={`p-4 sm:p-5 flex items-center justify-between border-b shrink-0 ${
+            isLight ? 'border-slate-200 bg-slate-50/50' : 'border-rose-950/40'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-rose-950/60 border border-rose-600/30 flex items-center justify-center text-rose-400 shrink-0">
+            <div
+              className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
+                isLight
+                  ? 'bg-blue-50 border-blue-200 text-blue-600'
+                  : 'bg-rose-950/60 border-rose-600/30 text-rose-400'
+              }`}
+            >
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
+              <h3
+                className={`text-base font-bold tracking-tight ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}
+              >
                 {isEditing ? 'Editor Catatan' : 'Catatan Baru'}
               </h3>
               <div className="flex items-center gap-2 text-xs">
                 {isEditing && (
                   <span className="flex items-center gap-1 text-[11px] font-mono text-zinc-400">
                     {saveStatus === 'saving' ? (
-                      <span className="text-amber-400 animate-pulse">● Menyimpan...</span>
+                      <span className="text-amber-500 animate-pulse">● Menyimpan...</span>
                     ) : (
-                      <span className="text-emerald-400 flex items-center gap-1">
+                      <span className="text-emerald-500 flex items-center gap-1">
                         <Check className="w-3 h-3" /> Tersimpan
                       </span>
                     )}
@@ -175,11 +195,19 @@ export const NoteEditorModal: React.FC = () => {
 
           <div className="flex items-center gap-2">
             {/* Quick Copy dropdown / button bar */}
-            <div className="flex items-center gap-1 border border-zinc-800 rounded-xl p-1 bg-zinc-900/60">
+            <div
+              className={`flex items-center gap-1 border rounded-xl p-1 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-zinc-900/60 border-zinc-800'
+              }`}
+            >
               <button
                 type="button"
                 onClick={handleCopyTitle}
-                className="px-2 py-1 rounded-lg text-[10px] font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+                className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${
+                  isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                }`}
                 title="Salin Judul"
               >
                 Copy Title
@@ -187,7 +215,11 @@ export const NoteEditorModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCopyContent}
-                className="px-2 py-1 rounded-lg text-[10px] font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+                className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ${
+                  isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                }`}
                 title="Salin Seluruh Isi"
               >
                 Copy Content
@@ -195,66 +227,31 @@ export const NoteEditorModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCopyAll}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold text-rose-300 bg-rose-950/60 hover:bg-rose-900/60 transition-colors"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                  isLight
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    : 'bg-rose-950/60 text-rose-300 hover:bg-rose-900/60'
+                }`}
                 title="Salin Judul & Seluruh Isi"
               >
                 <Copy className="w-3 h-3" />
-                <span>Copy All</span>
+                <span>Salin Semua</span>
               </button>
             </div>
 
-            {/* History Toggle */}
-            {editingNote.history && editingNote.history.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowHistory(!showHistory)}
-                className={`p-2 rounded-xl text-xs transition-colors ${
-                  showHistory ? 'bg-rose-950/80 text-rose-300' : 'text-zinc-400 hover:text-white'
-                }`}
-                title="Riwayat Perubahan"
-              >
-                <History className="w-4 h-4" />
-              </button>
-            )}
-
             <button
               onClick={() => setEditingNote(null)}
-              className="p-1.5 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-900"
+              className={`p-1.5 rounded-xl transition-colors ${
+                isLight ? 'text-slate-400 hover:text-slate-700' : 'text-zinc-400 hover:text-white'
+              }`}
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Modal Body */}
+        {/* Note Body Form */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          {/* History Drawer if toggled */}
-          {showHistory && editingNote.history && (
-            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-rose-900/40 text-xs space-y-2 mb-4">
-              <p className="font-bold text-rose-300">Riwayat Perubahan ({editingNote.history.length}):</p>
-              <div className="max-h-32 overflow-y-auto space-y-1.5 divide-y divide-zinc-850">
-                {editingNote.history.map((hist, idx) => (
-                  <div key={idx} className="pt-1.5 flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-400 font-mono">
-                      {new Date(hist.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <span className="text-zinc-300 truncate max-w-xs">{hist.title}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTitle(hist.title)
-                        setContent(hist.content)
-                      }}
-                      className="text-rose-400 hover:underline"
-                    >
-                      Pulihkan Versi Ini
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Title input */}
           <div>
             <input
@@ -263,76 +260,86 @@ export const NoteEditorModal: React.FC = () => {
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Judul Catatan..."
-              className="w-full px-4 py-3 rounded-xl bg-zinc-900/70 border border-zinc-800 text-lg font-bold text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500/80"
+              className={`w-full px-4 py-3 rounded-xl border text-base font-bold focus:outline-none transition-colors ${
+                isLight
+                  ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-500'
+                  : 'bg-zinc-900/60 border-zinc-800 text-white placeholder-zinc-500 focus:border-rose-500/80'
+              }`}
             />
           </div>
 
-          {/* Metadata Controls: Category, Image thumbnail, Pin, Fav */}
-          <div className="flex flex-wrap items-center gap-3 py-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400">Kategori:</span>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs text-white focus:outline-none"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.name} className="bg-zinc-900">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-3 ml-auto">
-              {/* Image thumbnail selector */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-zinc-400 flex items-center gap-1">
-                  <ImageIcon className="w-3.5 h-3.5" /> Cover:
+          {/* Controls bar: Category, Pin, Favorite */}
+          <div
+            className={`flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-zinc-900/40 border-zinc-800/80'
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Category select */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                  Kategori:
                 </span>
                 <select
-                  value={selectedImage || ''}
-                  onChange={(e) => setSelectedImage(e.target.value || undefined)}
-                  className="px-2 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 focus:outline-none"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className={`px-2.5 py-1 rounded-lg border text-xs focus:outline-none ${
+                    isLight
+                      ? 'bg-white border-slate-300 text-slate-800 focus:border-blue-500'
+                      : 'bg-zinc-900 border-zinc-800 text-white focus:border-rose-500/80'
+                  }`}
                 >
-                  <option value="">Tanpa Cover</option>
-                  {availableImages.map((img) => (
-                    <option key={img.src} value={img.src}>
-                      {img.label}
+                  {categories.map((c) => (
+                    <option
+                      key={c.id}
+                      value={c.name}
+                      className={isLight ? 'bg-white text-slate-800' : 'bg-zinc-900 text-white'}
+                    >
+                      {c.name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Pin */}
+              {/* Pin toggle */}
               <button
                 type="button"
                 onClick={() => setIsPinned(!isPinned)}
-                className={`p-2 rounded-xl text-xs flex items-center gap-1 transition-colors ${
-                  isPinned ? 'bg-rose-950/80 text-rose-300 border border-rose-600/40' : 'text-zinc-500 hover:text-white'
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors cursor-pointer ${
+                  isPinned
+                    ? isLight
+                      ? 'bg-blue-100 border-blue-200 text-blue-700'
+                      : 'bg-rose-950/60 border-rose-700 text-rose-300'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-500'
+                    : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
                 }`}
-                title="Sematkan catatan"
               >
-                <Pin className="w-3.5 h-3.5" />
+                <Pin className={`w-3 h-3 ${isPinned ? 'fill-current' : ''}`} />
+                <span>{isPinned ? 'Dipin' : 'Pin'}</span>
               </button>
 
-              {/* Favorite */}
+              {/* Favorite toggle */}
               <button
                 type="button"
                 onClick={() => setIsFavorite(!isFavorite)}
-                className={`p-2 rounded-xl text-xs flex items-center gap-1 transition-colors ${
-                  isFavorite ? 'bg-amber-950/80 text-amber-400 border border-amber-600/40' : 'text-zinc-500 hover:text-white'
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors cursor-pointer ${
+                  isFavorite
+                    ? 'bg-amber-100 border-amber-300 text-amber-700'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-500'
+                    : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
                 }`}
-                title="Tandai favorit"
               >
-                <Star className="w-3.5 h-3.5 fill-current" />
+                <Star className={`w-3 h-3 ${isFavorite ? 'fill-current text-amber-500' : ''}`} />
+                <span>{isFavorite ? 'Favorit' : 'Favoritkan'}</span>
               </button>
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <div className="flex gap-2">
+          {/* Tags bar */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <input
                 type="text"
                 value={tagInput}
@@ -343,13 +350,21 @@ export const NoteEditorModal: React.FC = () => {
                     handleAddTag()
                   }
                 }}
-                placeholder="Tambahkan tag (tekan enter)..."
-                className="w-full sm:w-64 px-3 py-1.5 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500/80"
+                placeholder="Tambah tag (#kuliah)..."
+                className={`w-full sm:w-64 px-3 py-1.5 rounded-xl border text-xs focus:outline-none ${
+                  isLight
+                    ? 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-blue-500'
+                    : 'bg-zinc-900/60 border-zinc-800 text-white placeholder-zinc-500 focus:border-rose-500/80'
+                }`}
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs text-white"
+                className={`px-3 py-1.5 rounded-xl text-xs cursor-pointer ${
+                  isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    : 'bg-zinc-800 hover:bg-zinc-700 text-white'
+                }`}
               >
                 + Tag
               </button>
@@ -360,13 +375,17 @@ export const NoteEditorModal: React.FC = () => {
                 {tags.map((t) => (
                   <span
                     key={t}
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-rose-950/40 border border-rose-800/40 text-rose-300"
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs border ${
+                      isLight
+                        ? 'bg-blue-50 border-blue-200 text-blue-700'
+                        : 'bg-rose-950/40 border-rose-800/40 text-rose-300'
+                    }`}
                   >
                     #{t}
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(t)}
-                      className="hover:text-white ml-0.5"
+                      className={isLight ? 'hover:text-blue-900 ml-0.5 cursor-pointer' : 'hover:text-white ml-0.5 cursor-pointer'}
                     >
                       ×
                     </button>
@@ -384,14 +403,22 @@ export const NoteEditorModal: React.FC = () => {
               value={content}
               onChange={(e) => handleContentChange(e.target.value)}
               placeholder="Tuliskan catatan, ide, atau dokumen di sini... Format bebas."
-              className="w-full p-4 rounded-xl bg-zinc-900/50 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 leading-relaxed font-sans focus:outline-none focus:border-rose-500/60 resize-y"
+              className={`w-full p-4 rounded-xl border text-sm leading-relaxed font-sans focus:outline-none resize-y ${
+                isLight
+                  ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-500'
+                  : 'bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder-zinc-500 focus:border-rose-500/60'
+              }`}
             />
           </div>
         </div>
 
         {/* Footer controls */}
-        <div className="p-4 border-t border-rose-950/40 bg-zinc-950/80 flex items-center justify-between shrink-0">
-          <p className="text-xs text-zinc-500 hidden sm:block">
+        <div
+          className={`p-4 border-t flex items-center justify-between shrink-0 ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-zinc-950/80 border-rose-950/40'
+          }`}
+        >
+          <p className={`text-xs hidden sm:block ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
             {content.split(/\s+/).filter(Boolean).length} kata • {content.length} karakter
           </p>
 
@@ -399,17 +426,27 @@ export const NoteEditorModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setEditingNote(null)}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-zinc-400 hover:text-white"
+              className={`px-4 py-2 rounded-xl text-xs font-medium cursor-pointer ${
+                isLight ? 'text-slate-500 hover:text-slate-800' : 'text-zinc-400 hover:text-white'
+              }`}
             >
               Tutup
             </button>
             <button
               type="button"
               onClick={() => handleSaveManual()}
-              className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white shadow-lg shadow-rose-950/50"
-              style={{
-                background: 'linear-gradient(135deg, #D51F2B 0%, #A30E1B 100%)',
-              }}
+              className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white shadow-lg cursor-pointer transition-transform active:scale-95"
+              style={
+                isLight
+                  ? {
+                      background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                      boxShadow: '0 4px 14px -2px rgba(37, 99, 235, 0.4)',
+                    }
+                  : {
+                      background: 'linear-gradient(135deg, #D51F2B 0%, #A30E1B 100%)',
+                      boxShadow: '0 4px 14px -2px rgba(213, 31, 43, 0.4)',
+                    }
+              }
             >
               {isEditing ? 'Selesai & Simpan' : 'Simpan Catatan'}
             </button>
